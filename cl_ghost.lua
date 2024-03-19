@@ -11,8 +11,6 @@ local speed_ud = 8.0
 local fov = (fov_max+fov_min)*0.5
 local cameraProp, PRIEST_PED, pedZone
 
-RequestScriptAudioBank('DLC_MP2023_1/DLC_MP2023_1_GH', false, -1)
-
 local function spawnPriest()
     if DoesEntityExist(PRIEST_PED) then return end
     
@@ -46,6 +44,7 @@ local function yeetPriest()
 end
 
 local function completedMessage(num, amount)
+    RequestScriptAudioBank('DLC_MP2023_1/DLC_MP2023_1_GH', false, -1)
     local scaleform = lib.requestScaleformMovie('MIDSIZED_MESSAGE', 3000)
     BeginScaleformMovieMethod(scaleform, 'SHOW_COND_SHARD_MESSAGE')
     PushScaleformMovieMethodParameterString(('Ghosts Captured %s/5'):format(num))
@@ -60,6 +59,7 @@ local function completedMessage(num, amount)
             DrawScaleformMovieFullscreen(scaleform, 255, 255, 255, 255)
         end
         SetScaleformMovieAsNoLongerNeeded(scaleform)
+        ReleaseScriptAudioBank()
     end)
 end
 
