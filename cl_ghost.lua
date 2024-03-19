@@ -44,7 +44,9 @@ local function yeetPriest()
 end
 
 local function completedMessage(num, amount)
-    RequestScriptAudioBank('DLC_MP2023_1/DLC_MP2023_1_GH', false, -1)
+    while not RequestScriptAudioBank('DLC_MP2023_1/DLC_MP2023_1_GH', false, -1) do
+        Wait(100)
+    end
     local scaleform = lib.requestScaleformMovie('MIDSIZED_MESSAGE', 3000)
     BeginScaleformMovieMethod(scaleform, 'SHOW_COND_SHARD_MESSAGE')
     PushScaleformMovieMethodParameterString(('Ghosts Captured %s/5'):format(num))
