@@ -9,7 +9,7 @@ function GetPlayer(id)
 end
 
 function GetPlyIdentifier(Player)
-    return Player.identifier
+    return Player.id
 end
 
 function DoNotification(src, text, nType)
