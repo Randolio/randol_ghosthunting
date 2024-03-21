@@ -4,6 +4,8 @@
 
 A little ghost hunt minigame inspired from GTA online that can occur every server restart. All 5 ghosts will be randomly generated at set coordinates until your server restarts or you restart the resource. Player's can only do it once per server restart on that specific character. Small cash rewards per photo captured, adjust if you want. Add more locations, whatever! There is only 5 ghost models so don't touch those.
 
+**This requires game build 2944 to use.**
+
 ## Requirements
 
 * [ox_lib](https://github.com/overextended/ox_lib/releases/)
