@@ -3,6 +3,7 @@ local storedPoints = {}
 local ghosts = {}
 local ptfxGhost = {}
 local holdingCam = false
+local takingPhoto = false
 local fov_max = 80.0
 local fov_min = 5.0 
 local zoomspeed = 10.0
@@ -102,9 +103,11 @@ local function HandleZoom(cam)
     local lPed = cache.ped
     if not IsPedSittingInAnyVehicle(lPed) then
         if IsControlJustPressed(0,241) then
+            PlaySound(-1, "Zoom_In", "MUGSHOT_CHARACTER_CREATION_SOUNDS", false, 0, true)
             fov = math.max(fov - zoomspeed, fov_min)
         end
         if IsControlJustPressed(0,242) then
+            PlaySound(-1, "Zoom_Out", "MUGSHOT_CHARACTER_CREATION_SOUNDS", false, 0, true)
             fov = math.min(fov + zoomspeed, fov_max)
         end
         local current_fov = GetCamFov(cam)
@@ -114,9 +117,11 @@ local function HandleZoom(cam)
         SetCamFov(cam, current_fov + (fov - current_fov)*0.05)
     else
         if IsControlJustPressed(0,17) then
+            PlaySound(-1, "Zoom_In", "MUGSHOT_CHARACTER_CREATION_SOUNDS", false, 0, true)
             fov = math.max(fov - zoomspeed, fov_min)
         end
         if IsControlJustPressed(0,16) then
+            PlaySound(-1, "Zoom_Out", "MUGSHOT_CHARACTER_CREATION_SOUNDS", false, 0, true)
             fov = math.min(fov + zoomspeed, fov_max)
         end
         local current_fov = GetCamFov(cam)
@@ -127,9 +132,38 @@ local function HandleZoom(cam)
     end
 end
 
+local function CallScaleformMethod(scaleform, method, ...)
+    local t
+    local args = { ... }
+    BeginScaleformMovieMethod(scaleform, method)
+    for k, v in ipairs(args) do
+        t = type(v)
+        if t == 'string' then
+            PushScaleformMovieMethodParameterString(v)
+        elseif t == 'number' then
+            if string.match(tostring(v), '%.') then
+                PushScaleformMovieFunctionParameterFloat(v)
+            else
+                PushScaleformMovieFunctionParameterInt(v)
+            end
+        elseif t == 'boolean' then
+            PushScaleformMovieMethodParameterBool(v)
+        end
+    end
+    EndScaleformMovieMethod()
+end
+
 local function initCamera()
     holdingCam = true
     toggleCamera(true)
+
+    local scaleform = lib.requestScaleformMovie('DIGITAL_CAMERA', 3000)
+    CallScaleformMethod(scaleform, "SHOW_PHOTO_FRAME", true)
+    CallScaleformMethod(scaleform, "SHOW_PHOTO_BORDER", false)
+    CallScaleformMethod(scaleform, "SHOW_REMAINING_PHOTOS", false)
+    CallScaleformMethod(scaleform, "OPEN_SHUTTER")
+    while not RequestScriptAudioBank("Mugshot_Character_Creator", false, -1) do Wait(0) end
+
     lib.showTextUI(('**LEFT CLICK** - %s  \n**SCROLL** - %s  \n**BACKSPACE** - %s'):format('Take Photo', 'Zoom In/Out', 'Cancel'), {position = 'left-center'})
     CreateThread(function()
         Wait(100)
@@ -145,20 +179,26 @@ local function initCamera()
 
         while holdingCam and not IsEntityDead(cache.ped) do
             DisablePlayerFiring(cache.playerId, true)
+            DrawScaleformMovieFullscreen(scaleform, 255, 255, 255, 255)
             if IsControlJustPressed(0, 177) then
                 holdingCam = false
                 PlaySoundFrontend(-1, 'SELECT', 'HUD_FRONTEND_DEFAULT_SOUNDSET', false)
                 ClearPedTasks(cache.ped)
-            elseif IsControlJustPressed(1, 176) then
-                PlaySoundFrontend(-1, 'Camera_Shoot', 'Phone_Soundset_Franklin', false)
+            elseif IsControlJustPressed(1, 176) and not takingPhoto then
+                takingPhoto = true
+                PlaySound(-1, "Take_Picture", "MUGSHOT_CHARACTER_CREATION_SOUNDS", false, 0, true)
+                CallScaleformMethod(scaleform, "CLOSE_SHUTTER", 100)
                 if closestGhost and IsEntityOnScreen(closestGhost) then
-                    local success, num, amount = lib.callback.await('randol_ghosts:server:ghostCaught', false, GetEntityModel(closestGhost))
-                    if num and amount then
-                        completedMessage(num, amount)
-                    end
+                    SetTimeout(500, function()
+                        local success, num, amount = lib.callback.await('randol_ghosts:server:ghostCaught', false, GetEntityModel(closestGhost))
+                        if num and amount then
+                            completedMessage(num, amount)
+                        end
+                        holdingCam = false
+                    end)
+                else
+                    holdingCam = false
                 end
-                holdingCam = false
-                ClearPedTasks(cache.ped)
             end
 
             local zoomvalue = (1.0 / (fov_max - fov_min)) * (fov - fov_min)
@@ -166,9 +206,13 @@ local function initCamera()
             HandleZoom(cam)
             Wait(0)
         end
+
+        takingPhoto = false
+        ReleaseScriptAudioBank()
+        ClearPedTasks(cache.ped)
+        SetScaleformMovieAsNoLongerNeeded(scaleform)
         lib.hideTextUI()
         toggleCamera(false)
-        holdingCam = false
         ClearTimecycleModifier()
         fov = (fov_max + fov_min) * 0.5
         RenderScriptCams(false, false, 0, true, false)
