@@ -6,6 +6,8 @@ A little ghost hunt minigame inspired from GTA online that can occur every serve
 
 **This requires game build 2944 to use.**
 
+**THE GHOSTS ONLY SPAWN AT NIGHT TIME BETWEEN 11PM AND 2AM**
+
 ## Requirements
 
 * [ox_lib](https://github.com/overextended/ox_lib/releases/)
