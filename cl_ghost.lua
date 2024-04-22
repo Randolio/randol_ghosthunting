@@ -14,14 +14,16 @@ local cameraProp, PRIEST_PED, pedZone
 
 local function spawnPriest()
     if DoesEntityExist(PRIEST_PED) then return end
-    
-    lib.requestModel(`cs_priest`, 5000)
-    PRIEST_PED = CreatePed(0, `cs_priest`, -1681.11, -291.01, 50.88, 239.09, false, false)
+    local model = `cs_priest`
+    lib.requestModel(model)
+    PRIEST_PED = CreatePed(0, model, -1681.11, -291.01, 50.88, 239.09, false, false)
+
     SetEntityAsMissionEntity(PRIEST_PED)
     SetPedFleeAttributes(PRIEST_PED, 0, 0)
     SetBlockingOfNonTemporaryEvents(PRIEST_PED, true)
     SetEntityInvincible(PRIEST_PED, true)
     FreezeEntityPosition(PRIEST_PED, true)
+    SetModelAsNoLongerNeeded(model)
 
     exports['qb-target']:AddTargetEntity(PRIEST_PED, {
         options = {
@@ -72,10 +74,11 @@ local function toggleCamera(bool)
         TaskPlayAnim(cache.ped, 'amb@world_human_paparazzi@male@base', 'base', 2.0, 2.0, -1, 1, 0, false, false, false)
         local pos = GetEntityCoords(cache.ped)
         local model = `prop_pap_camera_01`
-        lib.requestModel(model, 5000)
+        lib.requestModel(model)
         cameraProp = CreateObject(model, pos.x, pos.y, pos.z+0.2,  true,  true, true)
         AttachEntityToEntity(cameraProp, cache.ped, GetPedBoneIndex(cache.ped, 28422), 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, true, true, false, true, 1, true)
         SetModelAsNoLongerNeeded(model)
+        RemoveAnimDict('amb@world_human_paparazzi@male@base')
     else
         if DoesEntityExist(cameraProp) then
             DeleteEntity(cameraProp)
@@ -256,17 +259,20 @@ local function nearGhost(data)
         if not DoesEntityExist(ghosts[data.index]) then
             local v = data.pedData
             local model = joaat(v.model)
-            lib.requestModel(model, 5000)
+            lib.requestModel(model)
             ghosts[data.index] = CreateObject(model, v.coords.x, v.coords.y, v.coords.z - 0.85, false, false, false)
             closestGhost = ghosts[data.index]
             SetEntityHeading(ghosts[data.index], v.coords.w-180.0)
             FreezeEntityPosition(ghosts[data.index], true)
-            lib.requestAnimDict('ANIM@SCRIPTED@FREEMODE@IG2_GHOST@', 2000)
+            lib.requestAnimDict('ANIM@SCRIPTED@FREEMODE@IG2_GHOST@')
             PlayEntityAnim(ghosts[data.index], 'float_1', 'ANIM@SCRIPTED@FREEMODE@IG2_GHOST@', 1000.0, true, true, true, 0, 136704)
-            lib.requestNamedPtfxAsset('scr_srr_hal', 5000)
+            lib.requestNamedPtfxAsset('scr_srr_hal')
             UseParticleFxAsset('scr_srr_hal')
             ptfxGhost[data.index] = StartParticleFxLoopedOnEntity('scr_srr_hal_ghost_haze', ghosts[data.index], 0.0, 0.0, 0.7, 0.0, 0.0, 0.0, 1.0, false, false, false)
             SetParticleFxLoopedEvolution(ptfxGhost[data.index], 'smoke', 10.0, true)
+            RemoveNamedPtfxAsset('scr_srr_hal')
+            RemoveAnimDict('ANIM@SCRIPTED@FREEMODE@IG2_GHOST@')
+            SetModelAsNoLongerNeeded(model)
         end
     else
         if currentHour >= 2 and currentHour < 23 then
