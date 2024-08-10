@@ -11,6 +11,20 @@ local speed_lr = 8.0
 local speed_ud = 8.0
 local fov = (fov_max+fov_min)*0.5
 local cameraProp, PRIEST_PED, pedZone
+local oxtarget = GetResourceState('ox_target') == 'started'
+
+local function targetLocalEntity(entity, options, distance)
+    if oxtarget then
+        for _, option in ipairs(options) do
+            option.distance = distance
+            option.onSelect = option.action
+            option.action = nil
+        end
+        exports.ox_target:addLocalEntity(entity, options)
+    else
+        exports['qb-target']:AddTargetEntity(entity, { options = options, distance = distance })
+    end
+end
 
 local function spawnPriest()
     if DoesEntityExist(PRIEST_PED) then return end
@@ -25,23 +39,24 @@ local function spawnPriest()
     FreezeEntityPosition(PRIEST_PED, true)
     SetModelAsNoLongerNeeded(model)
 
-    exports['qb-target']:AddTargetEntity(PRIEST_PED, {
-        options = {
-            {
-                icon = 'fa-solid fa-ghost',
-                label = 'Start Hunting',
-                action = function()
-                    lib.callback.await('randol_ghosts:server:startHunt', false)
-                end,
-            },
+    targetLocalEntity(PRIEST_PED, {
+        {
+            icon = 'fa-solid fa-ghost',
+            label = 'Start Hunting',
+            action = function()
+                lib.callback.await('randol_ghosts:server:startHunt', false)
+            end,
         },
-        distance = 1.3
-    })
+    }, 1.5)
 end
 
 local function yeetPriest()
     if not DoesEntityExist(PRIEST_PED) then return end
-    exports['qb-target']:RemoveTargetEntity(PRIEST_PED, 'Start Hunting')
+    if oxtarget then
+        exports.ox_target:removeLocalEntity(PRIEST_PED, 'Start Hunting')
+    else
+        exports['qb-target']:RemoveTargetEntity(PRIEST_PED, 'Start Hunting')
+    end
     DeleteEntity(PRIEST_PED)
     PRIEST_PED = nil
 end
@@ -289,7 +304,7 @@ end
 
 local function createGhostSpawns()
     for id, data in pairs(cachedLocations) do
-        local zone = lib.points.new({
+        storedPoints[#storedPoints+1] = lib.points.new({
             coords = data.coords,
             distance = 50,
             index = id,
@@ -297,14 +312,8 @@ local function createGhostSpawns()
             nearby = nearGhost,
             onExit = yeetGhost,
         })
-        storedPoints[#storedPoints+1] = zone
     end
-    pedZone = lib.points.new({
-        coords = vec3(-1681.11, -291.01, 50.88),
-        distance = 50,
-        onEnter = spawnPriest,
-        onExit = yeetPriest,
-    })
+    pedZone = lib.points.new({ coords = vec3(-1681.11, -291.01, 50.88), distance = 50, onEnter = spawnPriest, onExit = yeetPriest, })
 end
 
 RegisterNetEvent('randol_ghosts:client:cacheLocations', function(data)
