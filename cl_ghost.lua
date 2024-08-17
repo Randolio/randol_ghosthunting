@@ -11,10 +11,9 @@ local speed_lr = 8.0
 local speed_ud = 8.0
 local fov = (fov_max+fov_min)*0.5
 local cameraProp, PRIEST_PED, pedZone
-local oxtarget = GetResourceState('ox_target') == 'started'
 
 local function targetLocalEntity(entity, options, distance)
-    if oxtarget then
+    if GetResourceState('ox_target') == 'started' then
         for _, option in ipairs(options) do
             option.distance = distance
             option.onSelect = option.action
@@ -52,7 +51,7 @@ end
 
 local function yeetPriest()
     if not DoesEntityExist(PRIEST_PED) then return end
-    if oxtarget then
+    if GetResourceState('ox_target') == 'started' then
         exports.ox_target:removeLocalEntity(PRIEST_PED, 'Start Hunting')
     else
         exports['qb-target']:RemoveTargetEntity(PRIEST_PED, 'Start Hunting')
