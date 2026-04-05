@@ -11,6 +11,16 @@ local speed_lr = 8.0
 local speed_ud = 8.0
 local fov = (fov_max+fov_min)*0.5
 local cameraProp, PRIEST_PED, pedZone
+local areaBlips = {}
+
+local function createAreaBlip(coords)
+    local offsetSign = math.random(-100, 100)/100
+    blip = AddBlipForRadius(coords.x, coords.y, coords.z, 100.0)
+    SetBlipHighDetail(blip, true)
+    SetBlipAlpha(blip, 150)
+    SetBlipColour(blip, 0)
+    return blip
+end
 
 local function targetLocalEntity(entity, options, distance)
     if GetResourceState('ox_target') == 'started' then
@@ -251,8 +261,12 @@ function cleanup()
             ghosts[k] = nil
         end
     end
+    for _, blip in pairs(areaBlips) do
+        RemoveBlip(blip)
+    end
     if pedZone then pedZone:remove() pedZone = nil end
     yeetPriest()
+    table.wipe(areaBlips)
     table.wipe(cachedLocations)
     table.wipe(storedPoints)
 end
@@ -311,6 +325,7 @@ local function createGhostSpawns()
             nearby = nearGhost,
             onExit = yeetGhost,
         })
+        areaBlips[id] = createAreaBlip(data.coords)
     end
     pedZone = lib.points.new({ coords = vec3(-1681.11, -291.01, 50.88), distance = 50, onEnter = spawnPriest, onExit = yeetPriest, })
 end
