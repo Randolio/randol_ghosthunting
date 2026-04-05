@@ -70,12 +70,12 @@ lib.callback.register('randol_ghosts:server:ghostCaught', function(source, model
         return false 
     end
 
-    if ghostHunters[cid][model] then
+    if ghostHunters[cid].completedGhosts[model] then
         DoNotification(src, 'You have already photographed this ghost today.', 'error')
         return false
     end
 
-    ghostHunters[cid][model] = true
+    ghostHunters[cid].completedGhosts[model] = true
     ghostHunters[cid].completed += 1
 
     local amount = math.random(2500, 3750)
@@ -100,7 +100,10 @@ lib.callback.register('randol_ghosts:server:startHunt', function(source)
         AddItem(player, 'ghostcam', 1)
     end
 
-    ghostHunters[cid] = { completed = 0 }
+    ghostHunters[cid] = {
+        completed = 0,
+        completedGhosts = {}
+    }
     DoNotification(src, 'Go find the 5 ghosts and snap photos for proof!', 'success')
     return true
 end)
@@ -116,6 +119,9 @@ end)
 function PlayerHasLoaded(source)
     local src = source
     SetTimeout(2000, function()
-        TriggerClientEvent('randol_ghosts:client:cacheLocations', src, generatedLocs)
+        local player = GetPlayer(src)
+        local cid = GetPlyIdentifier(player)
+        local state = ghostHunters[cid] or false
+        TriggerClientEvent('randol_ghosts:client:cacheLocations', src, generatedLocs, state)
     end)
 end
